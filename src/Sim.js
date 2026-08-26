@@ -27,11 +27,6 @@ function settingsFromWindowHash(specification) {
     }
 }
 
-function exportSettingsToWindowHash(settings) {
-    const encoded = encodeURIComponent(JSON.stringify(settings, null, 2));
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${encoded}`);
-}
-
 function resizeFieldSettings(settings, valueDimensions) {
     const oldDimensions = settings.valueDimensions;
     const patch = {valueDimensions};
@@ -97,7 +92,6 @@ function Sim({specification, setSpecification}) {
 
     function commitSettings(nextSettings, restart) {
         setSettings(nextSettings);
-        exportSettingsToWindowHash(nextSettings);
         if (restart) setRuntimeSettings({...nextSettings});
     }
 
@@ -217,7 +211,6 @@ function Sim({specification, setSpecification}) {
 
 export {
     Sim,
-    exportSettingsToWindowHash,
     prepareSettingsInput,
     resizeFieldSettings,
     settingsFromWindowHash

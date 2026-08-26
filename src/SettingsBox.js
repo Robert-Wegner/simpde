@@ -199,14 +199,14 @@ function SettingsBox({
                     </div>
                     <JsonEditor
                         name="currentSettingsJson"
-                        title="Current settings JSON"
+                        title="Settings"
                         description="Paste a settings JSON object. It is validated and applied when this field loses focus."
                         value={settingsJson}
                         onApply={onApplySettings}
                     />
                     <JsonEditor
                         name="applicationConfigurationJson"
-                        title="Application configuration JSON"
+                        title="Configuration"
                         description="Paste an application specification JSON object. It is validated and applied when this field loses focus."
                         value={specificationJson}
                         onApply={onApplySpecification}
@@ -216,11 +216,10 @@ function SettingsBox({
                     <InputBox
                         spec={{
                             name: "simulationExample",
-                            displayName: "Example configuration",
-                            description: "Choose a complete Input and Model configuration with matching settings. Simulation, Visualization, and JSON infrastructure remain the shared base.",
+                            displayName: "Load example",
+                            description: "Load a preset simulation.",
                             type: "string",
                             options: [
-                                {value: "", displayName: "Select an example…"},
                                 ...examples.map(example => ({value: example.id, displayName: example.name}))
                             ]
                         }}

@@ -60,8 +60,8 @@ const sdnlwSettings = completeSettings(sdnlwSpecification, {
 
 const schrodingerSpecification = composeExampleSpecification("SimPDE! — Linear Schrödinger wave packet", {
     overrides: {
-        inputRadius: {hidden: true},
-        inputStrength: {hidden: true, defaultValue: 0},
+        inputRadius: {hidden: false, defaultValue: 15},
+        inputStrength: {hidden: false, defaultValue: 10},
         initialDataFunction: {
             defaultValue: "(x, y) => { const dx = x - packetCenterX; const dy = y - packetCenterY; const amplitude = Math.exp(-(dx * dx + dy * dy) / (2.0 * packetSigma * packetSigma)); const phase = waveNumberX * x + waveNumberY * y; return [[amplitude * Math.cos(phase), 0.0], [amplitude * Math.sin(phase), 0.0]]; }",
             description: "JavaScript initial data for the real and imaginary parts of the wavefunction. The packet settings below are available by name."
@@ -73,7 +73,7 @@ const schrodingerSpecification = composeExampleSpecification("SimPDE! — Linear
         noiseStrength: {hidden: true},
         useCellularAutomatonRule: {hidden: true},
         equation: {
-            defaultValue: "#\nA = 0.5 * trapStrength * (x * x + y * y);\nu_1_t = -kinetic * (u_2_xx + u_2_yy) + A * u_2;\n#\nA = 0.5 * trapStrength * (x * x + y * y);\nu_2_t = kinetic * (u_1_xx + u_1_yy) - A * u_1;\n",
+            defaultValue: "#\nA = 0.5 * trapStrength * (x * x + y * y);\nB = waveNumberX * x + waveNumberY * y;\nu_1_t = -kinetic * (u_2_xx + u_2_yy) + A * u_2 + force * cos(B);\n#\nA = 0.5 * trapStrength * (x * x + y * y);\nB = waveNumberX * x + waveNumberY * y;\nu_2_t = kinetic * (u_1_xx + u_1_yy) - A * u_1 + force * sin(B);\n",
             description: "GLSL for the coupled real and imaginary parts of i ψ_t = (-kinetic Δ + V) ψ."
         }
     },
@@ -96,11 +96,13 @@ const schrodingerSpecification = composeExampleSpecification("SimPDE! — Linear
         {
             name: "waveNumberX", displayName: "Wave number X", group: "/settings/input/basic",
             type: "float", defaultValue: 2, restartOnChange: true,
+            uniformName: "waveNumberX", uniformType: "float", shaderPrograms: ["compute"],
             description: "Horizontal phase gradient of the initial wave packet."
         },
         {
             name: "waveNumberY", displayName: "Wave number Y", group: "/settings/input/basic",
-            type: "float", defaultValue: 0, restartOnChange: true,
+            type: "float", defaultValue: 3, restartOnChange: true,
+            uniformName: "waveNumberY", uniformType: "float", shaderPrograms: ["compute"],
             description: "Vertical phase gradient of the initial wave packet."
         },
         {
@@ -131,12 +133,12 @@ const schrodingerSettings = completeSettings(schrodingerSpecification, {
     valueDimensions: 2,
     timeOrder: 1,
     integrationMethod: "rk4",
-    inputStrength: 0,
+    inputStrength: 10,
     packetSigma: 3,
     packetCenterX: -25,
     packetCenterY: 0,
     waveNumberX: 2,
-    waveNumberY: 0,
+    waveNumberY: 3,
     kinetic: 5,
     trapStrength: 0,
     boundaryCondition: 1,
@@ -148,8 +150,8 @@ const schrodingerSettings = completeSettings(schrodingerSpecification, {
 
 const navierStokesSpecification = composeExampleSpecification("SimPDE! — 3-component Navier–Stokes", {
     overrides: {
-        inputRadius: {hidden: true},
-        inputStrength: {hidden: true, defaultValue: 0},
+        inputRadius: {hidden: false},
+        inputStrength: {hidden: false, defaultValue: 10},
         initialDataFunction: {
             defaultValue: "(x, y) => { const k = vortexWaveNumber; const a = vortexAmplitude; const e = perturbation; const u = a * (Math.sin(k * x) * Math.cos(k * y) + e * Math.sin(2.0 * k * y)); const v = a * (-Math.cos(k * x) * Math.sin(k * y) + e * Math.sin(2.0 * k * x)); const p = -0.25 * a * a * (Math.cos(2.0 * k * x) + Math.cos(2.0 * k * y)); return [[u, 0.0], [v, 0.0], [p, 0.0]]; }",
             description: "JavaScript initial data for horizontal velocity, vertical velocity, and pressure: a perturbed Taylor–Green vortex."
@@ -161,7 +163,7 @@ const navierStokesSpecification = composeExampleSpecification("SimPDE! — 3-com
         noiseStrength: {hidden: true},
         useCellularAutomatonRule: {hidden: true},
         equation: {
-            defaultValue: "#\nu_1_t = -u_1 * u_1_x - u_2 * u_1_y - u_3_x + viscosity * (u_1_xx + u_1_yy);\n#\nu_2_t = -u_1 * u_2_x - u_2 * u_2_y - u_3_y + viscosity * (u_2_xx + u_2_yy);\n#\nu_3_t = -pressureSpeed * pressureSpeed * (u_1_x + u_2_y) + pressureDiffusion * (u_3_xx + u_3_yy);\n",
+            defaultValue: "#\nu_1_t = -u_1 * u_1_x - u_2 * u_1_y - u_3_x + viscosity * (u_1_xx + u_1_yy) + force;\n#\nu_2_t = -u_1 * u_2_x - u_2 * u_2_y - u_3_y + viscosity * (u_2_xx + u_2_yy);\n#\nu_3_t = -pressureSpeed * pressureSpeed * (u_1_x + u_2_y) + pressureDiffusion * (u_3_xx + u_3_yy);\n",
             description: "GLSL artificial-compressibility Navier–Stokes: u_1 and u_2 are velocity; u_3 relaxes pressure toward incompressibility."
         }
     },
@@ -216,7 +218,7 @@ const navierStokesSettings = completeSettings(navierStokesSpecification, {
     valueDimensions: 3,
     timeOrder: 1,
     integrationMethod: "rk4",
-    inputStrength: 0,
+    inputStrength: 10,
     vortexAmplitude: 0.4,
     vortexWaveNumber: 0.75,
     perturbation: 0.03,
@@ -279,29 +281,29 @@ const cellularAutomatonSettingsB3S23 = completeSettings(cellularAutomatonSpecifi
 const simulationExamples = [
     {
         id: "sdnlw",
-        name: "SDNLW (default)",
-        description: "The original stochastic damped nonlinear wave model and controls.",
+        name: "SDNLW",
+        description: "Stochastic damped nonlinear wave.",
         specification: sdnlwSpecification,
         settings: sdnlwSettings
     },
     {
         id: "linear-schrodinger",
         name: "Linear Schrödinger wave packet",
-        description: "A two-component real/imaginary wavefunction evolved with RK4.",
+        description: "Linear wave packet.",
         specification: schrodingerSpecification,
         settings: schrodingerSettings
     },
     {
         id: "navier-stokes-3",
         name: "3-component Navier–Stokes vortex",
-        description: "A perturbed Taylor–Green vortex using a local artificial-compressibility pressure field.",
+        description: "Artificial-compressibility vortex.",
         specification: navierStokesSpecification,
         settings: navierStokesSettings
     },
     {
         id: "cellular-automaton",
         name: "Life-like cellular automaton",
-        description: "Conway's Life by default, with editable B…S… rule notation.",
+        description: "Life-like cellular automaton.",
         specification: cellularAutomatonSpecification,
         settings: cellularAutomatonSettingsB3S23
     }
