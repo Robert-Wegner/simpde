@@ -47,7 +47,8 @@ function completeSettings(specification, settings) {
         ...settings,
         width: 1050,
         height: 700,
-        delay: 8
+        delay: 8,
+        speed: 1
     });
 }
 
