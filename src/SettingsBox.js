@@ -109,13 +109,14 @@ function SettingsBox({
     specification,
     settings,
     handleSettingChange,
-    handleReset,
     onApplySettings,
     onApplySpecification,
     examples = [],
     selectedExampleId = "",
     onSelectExample,
-    runtimeError
+    runtimeError,
+    theme = "dark",
+    onToggleTheme
 }) {
     const [stringSettings, setStringSettings] = useState(() => stringifySettings(specification, settings));
     const [copyMessage, setCopyMessage] = useState(null);
@@ -137,17 +138,18 @@ function SettingsBox({
         {heading: "SIMPDE EXPLANATION PROMPT", content: SIMPDE_EXPLANATION_PROMPT}
     ]);
 
+    const groupPaths = (group, path) => {
+        const currentPath = `${path}/${group.name}`;
+        return [currentPath, ...group.subgroups.flatMap(subgroup => groupPaths(subgroup, currentPath))];
+    };
+
     const renderGroup = (group, path, depth) => {
         const currentPath = `${path}/${group.name}`;
         const borderColor = depth % 2 === 0 ? colors.cyan : colors.magenta;
-        if (group.subgroups.length > 0) {
-            return <CollapsibleList title={group.displayName} key={currentPath} borderColor={borderColor}>
-                {group.subgroups.map(subgroup => renderGroup(subgroup, currentPath, depth + 1))}
-            </CollapsibleList>;
-        }
+        const paths = new Set(groupPaths(group, path));
         return <CollapsibleList title={group.displayName} key={currentPath} borderColor={borderColor}>
             {specification.vars
-                .filter(property => property.group === currentPath && property.hidden !== true)
+                .filter(property => paths.has(property.group) && property.hidden !== true)
                 .map(property => <InputBox
                     key={`${currentPath}/${property.name}`}
                     spec={property}
@@ -162,17 +164,27 @@ function SettingsBox({
         </CollapsibleList>;
     };
 
-    return <div style={{
-        width: "25vw",
-        height: "90vh",
-        margin: "5px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center"
-    }}>
+    const rootPath = `/${specification.group.name}`;
+    const configurationNames = new Set(["input", "model", "visual"]);
+    const configurationGroups = specification.group.subgroups.filter(group => configurationNames.has(group.name));
+    const operationGroups = specification.group.subgroups.filter(group => !configurationNames.has(group.name));
+
+    return <div className="settings-box" style={{display: "flex", flexDirection: "column"}}>
+        <div className="settings-box__header">
+            <span className="settings-box__heading">Controls</span>
+            <button
+                type="button"
+                className="ui-button"
+                onClick={onToggleTheme}
+                aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            >
+                {theme === "dark" ? "☀ Light" : "◐ Dark"}
+            </button>
+        </div>
         <Scrollbars
             style={{
                 width: "100%",
+                flex: "1 1 auto",
                 borderTop: `1px solid ${colors.textWhite}`,
                 borderBottom: `1px solid ${colors.textWhite}`,
                 fontFamily: "Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New"
@@ -180,83 +192,71 @@ function SettingsBox({
             renderThumbVertical={() => <div style={{display: "none"}} />}
             renderTrackHorizontal={props => <div {...props} style={{display: "none"}} className="track-horizontal" />}
         >
-            <div style={{overflowX: "hidden"}}>
-                {renderGroup(specification.group, "", 0)}
-                <CollapsibleList title="JSON interfaces" borderColor={colors.cyan}>
-                    <div style={{width: "80%", display: "grid", gap: "5px", marginTop: "4px"}}>
-                        <CopyButton text={settingsJson} onResult={setCopyMessage}>Copy settings</CopyButton>
-                        <CopyButton text={SIMPDE_EXPLANATION_PROMPT} onResult={setCopyMessage}>Copy prompt</CopyButton>
-                        <CopyButton text={settingsAndPrompt} onResult={setCopyMessage}>Copy settings + prompt</CopyButton>
-                        <CopyButton text={specificationJson} onResult={setCopyMessage}>Copy configuration</CopyButton>
-                        <CopyButton text={specificationAndPrompt} onResult={setCopyMessage}>Copy configuration + prompt</CopyButton>
-                        <CopyButton text={everything} onResult={setCopyMessage}>Copy configuration + settings + prompt</CopyButton>
-                        {copyMessage && <div
-                            role={copyMessage.error ? "alert" : "status"}
-                            style={{color: copyMessage.error ? colors.red : colors.cyan, marginLeft: "6px"}}
-                        >
-                            {copyMessage.text}
+            <div style={{overflowX: "hidden", paddingRight: "10px"}}>
+                <CollapsibleList title="Configuration" borderColor={colors.cyan} defaultOpen>
+                    {configurationGroups.map(group => renderGroup(group, rootPath, 1))}
+                    <CollapsibleList title="Examples" borderColor={colors.magenta}>
+                        <InputBox
+                            spec={{
+                                name: "simulationExample",
+                                displayName: "Load example",
+                                description: "Load a preset simulation.",
+                                type: "string",
+                                options: [
+                                    {value: "", displayName: "Custom / modified"},
+                                    ...examples.map(example => ({value: example.id, displayName: example.name}))
+                                ]
+                            }}
+                            stringValue={selectedExampleId}
+                            handleChange={event => onSelectExample?.(event.target.value)}
+                            handleBlur={() => {}}
+                        />
+                        {selectedExampleId && <div style={{color: colors.cyan, margin: "6px"}}>
+                            {examples.find(example => example.id === selectedExampleId)?.description}
                         </div>}
-                    </div>
-                    <JsonEditor
-                        name="currentSettingsJson"
-                        title="Settings"
-                        description="Paste a settings JSON object. It is validated and applied when this field loses focus."
-                        value={settingsJson}
-                        onApply={onApplySettings}
-                    />
-                    <JsonEditor
-                        name="applicationConfigurationJson"
-                        title="Configuration"
-                        description="Paste an application specification JSON object. It is validated and applied when this field loses focus."
-                        value={specificationJson}
-                        onApply={onApplySpecification}
-                    />
+                    </CollapsibleList>
                 </CollapsibleList>
-                <CollapsibleList title="Examples" borderColor={colors.magenta}>
-                    <InputBox
-                        spec={{
-                            name: "simulationExample",
-                            displayName: "Load example",
-                            description: "Load a preset simulation.",
-                            type: "string",
-                            options: [
-                                ...examples.map(example => ({value: example.id, displayName: example.name}))
-                            ]
-                        }}
-                        stringValue={selectedExampleId}
-                        handleChange={event => onSelectExample?.(event.target.value)}
-                        handleBlur={() => {}}
-                    />
-                    {selectedExampleId && <div style={{color: colors.cyan, margin: "6px"}}>
-                        {examples.find(example => example.id === selectedExampleId)?.description}
-                    </div>}
+
+                <div className="settings-separator" aria-hidden="true" />
+
+                <CollapsibleList title="Simulation & data" borderColor={colors.magenta}>
+                    {operationGroups.map(group => renderGroup(group, rootPath, 1))}
+                    <CollapsibleList title="JSON interfaces" borderColor={colors.cyan}>
+                        <div style={{width: "80%", display: "grid", gap: "5px", marginTop: "4px"}}>
+                            <CopyButton text={settingsJson} onResult={setCopyMessage}>Copy settings</CopyButton>
+                            <CopyButton text={SIMPDE_EXPLANATION_PROMPT} onResult={setCopyMessage}>Copy prompt</CopyButton>
+                            <CopyButton text={settingsAndPrompt} onResult={setCopyMessage}>Copy settings + prompt</CopyButton>
+                            <CopyButton text={specificationJson} onResult={setCopyMessage}>Copy configuration</CopyButton>
+                            <CopyButton text={specificationAndPrompt} onResult={setCopyMessage}>Copy configuration + prompt</CopyButton>
+                            <CopyButton text={everything} onResult={setCopyMessage}>Copy configuration + settings + prompt</CopyButton>
+                            {copyMessage && <div
+                                role={copyMessage.error ? "alert" : "status"}
+                                style={{color: copyMessage.error ? colors.red : colors.cyan, marginLeft: "6px"}}
+                            >
+                                {copyMessage.text}
+                            </div>}
+                        </div>
+                        <JsonEditor
+                            name="currentSettingsJson"
+                            title="Settings"
+                            description="Paste a settings JSON object. It is validated and applied when this field loses focus."
+                            value={settingsJson}
+                            onApply={onApplySettings}
+                        />
+                        <JsonEditor
+                            name="applicationConfigurationJson"
+                            title="Configuration"
+                            description="Paste an application specification JSON object. It is validated and applied when this field loses focus."
+                            value={specificationJson}
+                            onApply={onApplySpecification}
+                        />
+                    </CollapsibleList>
                 </CollapsibleList>
                 {runtimeError && <div role="alert" style={{color: colors.red, whiteSpace: "pre-wrap", margin: "8px"}}>
                     {runtimeError}
                 </div>}
             </div>
         </Scrollbars>
-        <button
-            type="button"
-            onClick={handleReset}
-            onMouseEnter={event => {
-                event.currentTarget.style.textShadow = `0px 0px 3px ${colors.yellow}`;
-                event.currentTarget.style.boxShadow = `0px 0px 5px ${colors.yellow}`;
-            }}
-            onMouseLeave={event => {
-                event.currentTarget.style.textShadow = "";
-                event.currentTarget.style.boxShadow = "";
-            }}
-            style={{
-                marginTop: "5px",
-                fontSize: "1.2em",
-                width: "15vw",
-                backgroundColor: colors.gray,
-                color: colors.textWhite,
-                border: `2px solid ${colors.yellow}`,
-                cursor: "pointer"
-            }}
-        >Reset</button>
     </div>;
 }
 

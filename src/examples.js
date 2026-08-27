@@ -43,22 +43,56 @@ function composeExampleSpecification(title, creativeOptions) {
 }
 
 function completeSettings(specification, settings) {
-    return fillDefaultSettings(specification)(settings);
+    return fillDefaultSettings(specification)({
+        ...settings,
+        width: 1200,
+        height: 800
+    });
 }
 
-const sdnlwSpecification = composeExampleSpecification("SimPDE! — SDNLW", {
+const sdnlwSpecification = composeExampleSpecification("Stochastic nonlinear wave", {
     overrides: {
-        noiseStrength: {defaultValue: 0.1},
-        laplace: {defaultValue: 2}
+        laplace: {defaultValue: 5},
+        identity: {defaultValue: 0.2},
+        derivative: {defaultValue: 0.01},
+        noiseStrength: {defaultValue: 1.2},
+        boundaryCondition: {defaultValue: 1}
     }
 });
 const sdnlwSettings = completeSettings(sdnlwSpecification, {
+    width: 600,
+    height: 600,
+    scaleT: 0.05,
+    scaleX: 1,
+    scaleY: 1,
+    offsetX: 0,
+    offsetY: 0,
+    speed: 1,
+    delay: 1,
     valueDimensions: 1,
-    laplace: 2,
-    noiseStrength: 0.1
+    timeOrder: 2,
+    integrationMethod: "semiImplicitEuler",
+    colorSensitivity: 10,
+    colorMixRatio: 0.1,
+    colorExponent: 1,
+    colorMixExponent: 1,
+    colorCap: 1,
+    colorPattern: 0,
+    displayedQuantity: "[`u_1`]",
+    inputRadius: 20,
+    inputStrength: 10,
+    initialDataFunction: "(x, y) => [[0.0, 0.0]]",
+    laplace: 5,
+    identity: 0.2,
+    derivative: 0.01,
+    cubic: 1,
+    noiseStrength: 1.2,
+    useCellularAutomatonRule: "",
+    boundaryCondition: 1,
+    equation: "#\nu_1_tt = laplace * (u_1_xx + u_1_yy)\n    - identity * u_1\n    - derivative * u_1_t\n    - cubic * u_1 * u_1 * u_1\n    + noiseStrength * noise\n    + force;\n"
 });
 
-const schrodingerSpecification = composeExampleSpecification("SimPDE! — Linear Schrödinger wave packet", {
+const schrodingerSpecification = composeExampleSpecification("Nonlinear Schrödinger wave packet", {
     overrides: {
         inputRadius: {hidden: false, defaultValue: 15},
         inputStrength: {hidden: false, defaultValue: 10},
@@ -73,8 +107,8 @@ const schrodingerSpecification = composeExampleSpecification("SimPDE! — Linear
         noiseStrength: {hidden: true},
         useCellularAutomatonRule: {hidden: true},
         equation: {
-            defaultValue: "#\nA = 0.5 * trapStrength * (x * x + y * y);\nB = waveNumberX * x + waveNumberY * y;\nu_1_t = -kinetic * (u_2_xx + u_2_yy) + A * u_2 + force * cos(B);\n#\nA = 0.5 * trapStrength * (x * x + y * y);\nB = waveNumberX * x + waveNumberY * y;\nu_2_t = kinetic * (u_1_xx + u_1_yy) - A * u_1 + force * sin(B);\n",
-            description: "GLSL for the coupled real and imaginary parts of i ψ_t = (-kinetic Δ + V) ψ."
+            defaultValue: "#\nA = 0.5 * trapStrength * (x * x + y * y) + nonlinearStrength * pow(max(u_1 * u_1 + u_2 * u_2, 0.000000000001), 0.5 * (nonlinearPower - 1.0));\nB = waveNumberX * x + waveNumberY * y;\nu_1_t = -kinetic * (u_2_xx + u_2_yy) + A * u_2 + force * cos(B);\n#\nA = 0.5 * trapStrength * (x * x + y * y) + nonlinearStrength * pow(max(u_1 * u_1 + u_2 * u_2, 0.000000000001), 0.5 * (nonlinearPower - 1.0));\nB = waveNumberX * x + waveNumberY * y;\nu_2_t = kinetic * (u_1_xx + u_1_yy) - A * u_1 + force * sin(B);\n",
+            description: "Coupled real and imaginary parts of a nonlinear Schrödinger equation with adjustable |ψ|^(p-1)ψ nonlinearity."
         }
     },
     extraProperties: [
@@ -118,6 +152,20 @@ const schrodingerSpecification = composeExampleSpecification("SimPDE! — Linear
             uniformName: "trapStrength", uniformType: "float", shaderPrograms: ["compute"],
             restartOnChange: false,
             description: "Strength of V(x,y) = trapStrength (x² + y²) / 2."
+        },
+        {
+            name: "nonlinearStrength", displayName: "Nonlinear strength", group: "/settings/model/basic",
+            type: "float", defaultValue: -0.5,
+            uniformName: "nonlinearStrength", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Coefficient of the power-law nonlinearity; negative values are focusing."
+        },
+        {
+            name: "nonlinearPower", displayName: "Nonlinear power p", group: "/settings/model/basic",
+            type: "float", minimum: 1, defaultValue: 3,
+            uniformName: "nonlinearPower", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Power p in the nonlinear term |ψ|^(p-1)ψ. p = 3 gives the cubic nonlinear Schrödinger equation."
         }
     ]
 });
@@ -141,6 +189,8 @@ const schrodingerSettings = completeSettings(schrodingerSpecification, {
     waveNumberY: 3,
     kinetic: 5,
     trapStrength: 0,
+    nonlinearStrength: -0.5,
+    nonlinearPower: 3,
     boundaryCondition: 1,
     colorSensitivity: 1.5,
     colorMixRatio: 0.25,
@@ -148,13 +198,13 @@ const schrodingerSettings = completeSettings(schrodingerSpecification, {
     displayedQuantity: "[`1i u_2`, `u_1 * u_1 + u_2 * u_2`]"
 });
 
-const navierStokesSpecification = composeExampleSpecification("SimPDE! — 3-component Navier–Stokes", {
+const navierStokesSpecification = composeExampleSpecification("Navier–Stokes vortex dipole", {
     overrides: {
-        inputRadius: {hidden: false},
-        inputStrength: {hidden: false, defaultValue: 10},
+        inputRadius: {hidden: false, defaultValue: 18},
+        inputStrength: {hidden: false, defaultValue: 1.5},
         initialDataFunction: {
-            defaultValue: "(x, y) => { const k = vortexWaveNumber; const a = vortexAmplitude; const e = perturbation; const u = a * (Math.sin(k * x) * Math.cos(k * y) + e * Math.sin(2.0 * k * y)); const v = a * (-Math.cos(k * x) * Math.sin(k * y) + e * Math.sin(2.0 * k * x)); const p = -0.25 * a * a * (Math.cos(2.0 * k * x) + Math.cos(2.0 * k * y)); return [[u, 0.0], [v, 0.0], [p, 0.0]]; }",
-            description: "JavaScript initial data for horizontal velocity, vertical velocity, and pressure: a perturbed Taylor–Green vortex."
+            defaultValue: "(x, y) => { const r2 = vortexRadius * vortexRadius; const left = Math.exp(-((x + vortexSeparation) * (x + vortexSeparation) + y * y) / (2.0 * r2)); const right = Math.exp(-((x - vortexSeparation) * (x - vortexSeparation) + y * y) / (2.0 * r2)); const u = -vortexAmplitude * y * (left - right) / r2; const v = vortexAmplitude * ((x + vortexSeparation) * left - (x - vortexSeparation) * right) / r2; return [[u, 0.0], [v, 0.0], [0.0, 0.0]]; }",
+            description: "A smooth, divergence-free counter-rotating vortex pair that translates and deforms without an aggressive initial transient."
         },
         laplace: {hidden: true},
         identity: {hidden: true},
@@ -170,36 +220,36 @@ const navierStokesSpecification = composeExampleSpecification("SimPDE! — 3-com
     extraProperties: [
         {
             name: "vortexAmplitude", displayName: "Vortex amplitude", group: "/settings/input/basic",
-            type: "float", defaultValue: 0.4, restartOnChange: true,
-            description: "Velocity amplitude in the Taylor–Green initial data."
+            type: "float", defaultValue: 7, restartOnChange: true,
+            description: "Stream-function amplitude of the two vortices."
         },
         {
-            name: "vortexWaveNumber", displayName: "Vortex wave number", group: "/settings/input/basic",
-            type: "float", exclusiveMinimum: 0, defaultValue: 0.75, restartOnChange: true,
-            description: "Spatial frequency in the periodic Taylor–Green initial data."
+            name: "vortexSeparation", displayName: "Vortex separation", group: "/settings/input/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 10, restartOnChange: true,
+            description: "Distance from the origin to each vortex center."
         },
         {
-            name: "perturbation", displayName: "Vortex perturbation", group: "/settings/input/basic",
-            type: "float", minimum: 0, defaultValue: 0.03, restartOnChange: true,
-            description: "Divergence-free higher-frequency perturbation added to the initial vortex."
+            name: "vortexRadius", displayName: "Vortex radius", group: "/settings/input/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 6, restartOnChange: true,
+            description: "Gaussian core radius of each vortex."
         },
         {
             name: "viscosity", displayName: "Kinematic viscosity", group: "/settings/model/basic",
-            type: "float", minimum: 0, defaultValue: 0.08,
+            type: "float", minimum: 0, defaultValue: 0.035,
             uniformName: "viscosity", uniformType: "float", shaderPrograms: ["compute"],
             restartOnChange: false,
             description: "Diffusion coefficient for both velocity components."
         },
         {
             name: "pressureSpeed", displayName: "Pressure-wave speed", group: "/settings/model/basic",
-            type: "float", exclusiveMinimum: 0, defaultValue: 1,
+            type: "float", exclusiveMinimum: 0, defaultValue: 1.5,
             uniformName: "pressureSpeed", uniformType: "float", shaderPrograms: ["compute"],
             restartOnChange: false,
             description: "Artificial-compressibility speed. Larger values suppress divergence more strongly but require a smaller time step."
         },
         {
             name: "pressureDiffusion", displayName: "Pressure diffusion", group: "/settings/model/basic",
-            type: "float", minimum: 0, defaultValue: 0.05,
+            type: "float", minimum: 0, defaultValue: 0.08,
             uniformName: "pressureDiffusion", uniformType: "float", shaderPrograms: ["compute"],
             restartOnChange: false,
             description: "Small pressure smoothing term used by the local artificial-compressibility formulation."
@@ -208,32 +258,406 @@ const navierStokesSpecification = composeExampleSpecification("SimPDE! — 3-com
 });
 
 const navierStokesSettings = completeSettings(navierStokesSpecification, {
-    width: 300,
-    height: 900,
-    scaleT: 0.001,
-    scaleX: 2 * Math.PI / 300,
-    scaleY: 2 * Math.PI / 300,
-    speed: 2,
+    width: 360,
+    height: 1080,
+    scaleT: 0.002,
+    scaleX: 0.25,
+    scaleY: 0.25,
+    speed: 4,
     delay: 16,
     valueDimensions: 3,
     timeOrder: 1,
     integrationMethod: "rk4",
-    inputStrength: 10,
-    vortexAmplitude: 0.4,
-    vortexWaveNumber: 0.75,
-    perturbation: 0.03,
-    viscosity: 0.08,
-    pressureSpeed: 1,
-    pressureDiffusion: 0.05,
+    inputRadius: 18,
+    inputStrength: 1.5,
+    vortexAmplitude: 7,
+    vortexSeparation: 10,
+    vortexRadius: 6,
+    viscosity: 0.035,
+    pressureSpeed: 1.5,
+    pressureDiffusion: 0.08,
     boundaryCondition: 0,
-    colorSensitivity: 2.5,
+    colorSensitivity: 1.8,
     colorMixRatio: 0.2,
     displayedQuantity: "[`u_1`, `u_2`, `u_2_x - u_1_y`]"
 });
 
-const cellularAutomatonSpecification = composeExampleSpecification("SimPDE! — Life-like cellular automaton", {
+const ginzburgLandauSpecification = composeExampleSpecification("Stochastic complex Ginzburg–Landau", {
     overrides: {
-        inputStrength: {defaultValue: 1},
+        inputRadius: {defaultValue: 16},
+        inputStrength: {defaultValue: 2},
+        initialDataFunction: {
+            defaultValue: "(x, y) => [[0.0, 0.0], [0.0, 0.0]]",
+            description: "Zero initial data for both components. Persistent random forcing seeds the evolving pattern."
+        },
+        laplace: {hidden: true},
+        identity: {hidden: true},
+        derivative: {hidden: true},
+        cubic: {hidden: true},
+        noiseStrength: {
+            displayName: "Random forcing",
+            defaultValue: 0.04,
+            description: "Continuously seeds both components with independent spatial random forcing."
+        },
+        useCellularAutomatonRule: {hidden: true},
+        equation: {
+            defaultValue: "#\nA = u_1 * u_1 + u_2 * u_2;\nu_1_t = growth * u_1 + diffusion * ((u_1_xx + u_1_yy) - linearDispersion * (u_2_xx + u_2_yy)) - saturation * A * (u_1 - nonlinearDispersion * u_2) + noiseStrength * noise + force;\n#\nA = u_1 * u_1 + u_2 * u_2;\nu_2_t = growth * u_2 + diffusion * ((u_2_xx + u_2_yy) + linearDispersion * (u_1_xx + u_1_yy)) - saturation * A * (u_2 + nonlinearDispersion * u_1) + noiseStrength * noise;\n",
+            description: "Real and imaginary components of the complex Ginzburg–Landau equation."
+        }
+    },
+    extraProperties: [
+        {
+            name: "growth", displayName: "Linear growth", group: "/settings/model/basic",
+            type: "float", defaultValue: 1,
+            uniformName: "growth", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Linear instability that amplifies the noise-seeded field."
+        },
+        {
+            name: "diffusion", displayName: "Diffusion", group: "/settings/model/basic",
+            type: "float", minimum: 0, defaultValue: 1,
+            uniformName: "diffusion", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Spatial coupling strength."
+        },
+        {
+            name: "linearDispersion", displayName: "Linear dispersion", group: "/settings/model/basic",
+            type: "float", defaultValue: 1.4,
+            uniformName: "linearDispersion", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Phase rotation associated with spatial coupling."
+        },
+        {
+            name: "nonlinearDispersion", displayName: "Nonlinear dispersion", group: "/settings/model/basic",
+            type: "float", defaultValue: -0.8,
+            uniformName: "nonlinearDispersion", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Phase rotation associated with nonlinear saturation."
+        },
+        {
+            name: "saturation", displayName: "Saturation", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 1,
+            uniformName: "saturation", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Cubic amplitude saturation."
+        }
+    ]
+});
+
+const ginzburgLandauSettings = completeSettings(ginzburgLandauSpecification, {
+    width: 400,
+    height: 800,
+    scaleT: 0.01,
+    scaleX: 0.5,
+    scaleY: 0.5,
+    speed: 3,
+    delay: 16,
+    valueDimensions: 2,
+    timeOrder: 1,
+    integrationMethod: "rk4",
+    boundaryCondition: 0,
+    noiseStrength: 0.04,
+    colorSensitivity: 1.5,
+    colorMixRatio: 0.25,
+    colorExponent: 0.7,
+    displayedQuantity: "[`1i u_2`, `u_1 * u_1 + u_2 * u_2`]"
+});
+
+const swiftHohenbergSpecification = composeExampleSpecification("Stochastic Swift–Hohenberg patterns", {
+    overrides: {
+        inputRadius: {defaultValue: 32},
+        inputStrength: {defaultValue: 0.4},
+        initialDataFunction: {
+            defaultValue: "(x, y) => [[0.0, 0.0]]",
+            description: "Zero initial data. Random forcing continuously nucleates and moves the stripes."
+        },
+        laplace: {hidden: true},
+        identity: {hidden: true},
+        derivative: {hidden: true},
+        cubic: {hidden: true},
+        noiseStrength: {
+            displayName: "Random forcing",
+            defaultValue: 10,
+            description: "Persistent random forcing that seeds and agitates the pattern."
+        },
+        useCellularAutomatonRule: {hidden: true},
+        equation: {
+            defaultValue: "#\nA = u_1_xx + u_1_yy;\nB = u_1_xxxx + 2.0 * u_1_xxyy + u_1_yyyy;\nu_1_t = (patternGrowth - pow(patternWaveNumber, 4.0)) * u_1 - 2.0 * pow(patternWaveNumber, 2.0) * A - B - patternSaturation * u_1 * u_1 * u_1 + noiseStrength * noise + force;\n",
+            description: "The isotropic Swift–Hohenberg equation expanded into Laplacian and biharmonic terms."
+        }
+    },
+    extraProperties: [
+        {
+            name: "patternGrowth", displayName: "Pattern growth", group: "/settings/model/basic",
+            type: "float", defaultValue: 0.25,
+            uniformName: "patternGrowth", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Distance above the pattern-forming instability threshold."
+        },
+        {
+            name: "patternWaveNumber", displayName: "Preferred wave number", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 0.5,
+            uniformName: "patternWaveNumber", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Selects the preferred stripe spacing."
+        },
+        {
+            name: "patternSaturation", displayName: "Pattern saturation", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 0.2,
+            uniformName: "patternSaturation", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Cubic saturation that limits pattern amplitude."
+        }
+    ]
+});
+
+const swiftHohenbergSettings = completeSettings(swiftHohenbergSpecification, {
+    width: 420,
+    height: 420,
+    scaleT: 0.01,
+    scaleX: 1,
+    scaleY: 1,
+    speed: 4,
+    delay: 16,
+    valueDimensions: 1,
+    timeOrder: 1,
+    integrationMethod: "rk4",
+    boundaryCondition: 0,
+    inputRadius: 32,
+    inputStrength: 0.4,
+    initialDataFunction: "(x, y) => [[0.0, 0.0]]",
+    laplace: 1,
+    identity: 1,
+    derivative: 1,
+    cubic: 1,
+    noiseStrength: 10,
+    useCellularAutomatonRule: "",
+    colorSensitivity: 2.2,
+    colorMixRatio: 0.15,
+    colorExponent: 0.8,
+    colorMixExponent: 1,
+    colorCap: 1,
+    colorPattern: 0,
+    patternGrowth: 0.25,
+    patternWaveNumber: 0.5,
+    patternSaturation: 0.2,
+    equation: "#\nA = u_1_xx + u_1_yy;\nB = u_1_xxxx + 2.0 * u_1_xxyy + u_1_yyyy;\nu_1_t = (patternGrowth - pow(patternWaveNumber, 4.0)) * u_1 - 2.0 * pow(patternWaveNumber, 2.0) * A - B - patternSaturation * u_1 * u_1 * u_1 + noiseStrength * noise + force;\n",
+    displayedQuantity: "[`u_1`]"
+});
+
+const heatSpecification = composeExampleSpecification("Heat equation", {
+    overrides: {
+        inputRadius: {defaultValue: 18},
+        inputStrength: {defaultValue: 2},
+        initialDataFunction: {
+            defaultValue: "(x, y) => [[Math.exp(-((x + 25.0) * (x + 25.0) + y * y) / (2.0 * initialSpotWidth * initialSpotWidth)) - 0.7 * Math.exp(-((x - 20.0) * (x - 20.0) + (y - 12.0) * (y - 12.0)) / (2.0 * initialSpotWidth * initialSpotWidth)), 0.0]]",
+            description: "Two smooth hot/cold spots used to show diffusion. initialSpotWidth is available by name."
+        },
+        laplace: {hidden: true},
+        identity: {hidden: true},
+        derivative: {hidden: true},
+        cubic: {hidden: true},
+        noiseStrength: {hidden: true},
+        useCellularAutomatonRule: {hidden: true},
+        equation: {
+            defaultValue: "#\nu_1_t = thermalDiffusivity * (u_1_xx + u_1_yy) + force;\n",
+            description: "The linear heat equation with optional pointer-applied heat input."
+        }
+    },
+    extraProperties: [
+        {
+            name: "initialSpotWidth", displayName: "Initial spot width", group: "/settings/input/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 12, restartOnChange: true,
+            description: "Gaussian width of the initial hot and cold spots."
+        },
+        {
+            name: "thermalDiffusivity", displayName: "Thermal diffusivity", group: "/settings/model/basic",
+            type: "float", minimum: 0, defaultValue: 1.2,
+            uniformName: "thermalDiffusivity", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Rate at which temperature spreads."
+        }
+    ]
+});
+
+const heatSettings = completeSettings(heatSpecification, {
+    width: 400,
+    height: 400,
+    scaleT: 0.02,
+    scaleX: 0.5,
+    scaleY: 0.5,
+    speed: 3,
+    delay: 16,
+    valueDimensions: 1,
+    timeOrder: 1,
+    integrationMethod: "rk4",
+    boundaryCondition: 1,
+    colorSensitivity: 2,
+    colorMixRatio: 0.2,
+    displayedQuantity: "[`u_1`]"
+});
+
+const lensWaveSpecification = composeExampleSpecification("Linear wave through a lens", {
+    overrides: {
+        inputRadius: {defaultValue: 10},
+        inputStrength: {defaultValue: 9},
+        initialDataFunction: {
+            defaultValue: "(x, y) => [[0.0, 0.0]]",
+            description: "Zero displacement and velocity; a built-in source sends plane waves in from the left."
+        },
+        laplace: {hidden: true},
+        identity: {hidden: true},
+        derivative: {hidden: true},
+        cubic: {hidden: true},
+        noiseStrength: {hidden: true},
+        useCellularAutomatonRule: {hidden: true},
+        equation: {
+            defaultValue: "#\nA = 1.0 / (1.0 + exp(lensEdgeSharpness * (sqrt(pow((x - lensCenterX) / (lensSize * lensRadiusX), 2.0) + pow((y - lensCenterY) / (lensSize * lensRadiusY), 2.0)) - 1.0)));\nB = baseWaveSpeed / (1.0 + lensStrength * A);\nC = sourceAmplitude * exp(-pow((x - sourceX) / sourceWidth, 2.0)) * sin(sourceFrequency * t);\nu_1_tt = B * B * (u_1_xx + u_1_yy) - waveDamping * u_1_t + C + force;\n",
+            description: "A linear wave equation whose local propagation speed is reduced inside a smooth elliptical lens."
+        }
+    },
+    extraProperties: [
+        {
+            name: "sourceAmplitude", displayName: "Source amplitude", group: "/settings/input/basic",
+            type: "float", defaultValue: 10,
+            uniformName: "sourceAmplitude", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Strength of the continuous plane-wave source on the left."
+        },
+        {
+            name: "sourceFrequency", displayName: "Source frequency", group: "/settings/input/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 3,
+            uniformName: "sourceFrequency", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Angular frequency of incoming waves."
+        },
+        {
+            name: "sourceX", displayName: "Source X position", group: "/settings/input/basic",
+            type: "float", defaultValue: -90,
+            uniformName: "sourceX", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Horizontal position of the source near the left edge."
+        },
+        {
+            name: "sourceWidth", displayName: "Source width", group: "/settings/input/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 1.2,
+            uniformName: "sourceWidth", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Thickness of the incoming-wave source strip."
+        },
+        {
+            name: "baseWaveSpeed", displayName: "Background wave speed", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 5.79,
+            uniformName: "baseWaveSpeed", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Propagation speed outside the lens."
+        },
+        {
+            name: "waveDamping", displayName: "Wave damping", group: "/settings/model/basic",
+            type: "float", minimum: 0, defaultValue: 0.035,
+            uniformName: "waveDamping", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Small uniform damping that limits accumulated reflections."
+        },
+        {
+            name: "lensStrength", displayName: "Lens refractive strength", group: "/settings/model/basic",
+            type: "float", minimum: 0, defaultValue: 2.8,
+            uniformName: "lensStrength", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "How strongly the lens reduces the local wave speed."
+        },
+        {
+            name: "lensCenterX", displayName: "Lens center X", group: "/settings/model/basic",
+            type: "float", defaultValue: 0.19,
+            uniformName: "lensCenterX", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Horizontal center of the lens."
+        },
+        {
+            name: "lensCenterY", displayName: "Lens center Y", group: "/settings/model/basic",
+            type: "float", defaultValue: 0,
+            uniformName: "lensCenterY", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Vertical center of the lens."
+        },
+        {
+            name: "lensSize", displayName: "Lens size", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 2,
+            uniformName: "lensSize", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Overall lens-size multiplier. The default 2 doubles both lens radii."
+        },
+        {
+            name: "lensRadiusX", displayName: "Lens radius X", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 5,
+            uniformName: "lensRadiusX", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Horizontal semi-axis of the elliptical lens."
+        },
+        {
+            name: "lensRadiusY", displayName: "Lens radius Y", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 18,
+            uniformName: "lensRadiusY", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Vertical semi-axis of the elliptical lens."
+        },
+        {
+            name: "lensEdgeSharpness", displayName: "Lens edge sharpness", group: "/settings/model/basic",
+            type: "float", exclusiveMinimum: 0, defaultValue: 8,
+            uniformName: "lensEdgeSharpness", uniformType: "float", shaderPrograms: ["compute"],
+            restartOnChange: false,
+            description: "Smoothness of the material transition at the lens boundary."
+        }
+    ]
+});
+
+const lensWaveSettings = completeSettings(lensWaveSpecification, {
+    width: 800,
+    height: 800,
+    scaleT: 0.012,
+    scaleX: 0.2,
+    scaleY: 0.2,
+    speed: 3,
+    delay: 16,
+    valueDimensions: 1,
+    timeOrder: 2,
+    integrationMethod: "semiImplicitEuler",
+    inputRadius: 10,
+    inputStrength: 9,
+    initialDataFunction: "(x, y) => [[0.0, 0.0]]",
+    laplace: 1,
+    identity: 1,
+    derivative: 1,
+    cubic: 1,
+    noiseStrength: 0,
+    useCellularAutomatonRule: "",
+    boundaryCondition: 3,
+    colorSensitivity: 3,
+    colorMixRatio: 0.12,
+    colorExponent: 0.75,
+    colorMixExponent: 1,
+    colorCap: 1,
+    colorPattern: 0,
+    sourceAmplitude: 10,
+    sourceFrequency: 3,
+    sourceX: -90,
+    sourceWidth: 1.2,
+    baseWaveSpeed: 5.79,
+    waveDamping: 0.035,
+    lensStrength: 2.8,
+    lensCenterX: 0.19,
+    lensCenterY: 0,
+    lensSize: 2,
+    lensRadiusX: 5,
+    lensRadiusY: 18,
+    lensEdgeSharpness: 8,
+    equation: "#\nA = 1.0 / (1.0 + exp(lensEdgeSharpness * (sqrt(pow((x - lensCenterX) / (lensSize * lensRadiusX), 2.0) + pow((y - lensCenterY) / (lensSize * lensRadiusY), 2.0)) - 1.0)));\nB = baseWaveSpeed / (1.0 + lensStrength * A);\nC = sourceAmplitude * exp(-pow((x - sourceX) / sourceWidth, 2.0)) * sin(sourceFrequency * t);\nu_1_tt = B * B * (u_1_xx + u_1_yy) - waveDamping * u_1_t + C + force;\n",
+    displayedQuantity: "[`u_1`]"
+});
+
+const cellularAutomatonSpecification = composeExampleSpecification("Conway's Game of Life", {
+    overrides: {
+        inputStrength: {defaultValue: 10},
         initialDataFunction: {
             defaultValue: "(x, y) => [[Math.random() < initialDensity ? 1.0 : 0.0, 0.0]]",
             description: "JavaScript random initial state. initialDensity is available by name."
@@ -254,7 +678,7 @@ const cellularAutomatonSpecification = composeExampleSpecification("SimPDE! — 
     extraProperties: [
         {
             name: "initialDensity", displayName: "Initial live-cell density", group: "/settings/input/basic",
-            type: "float", minimum: 0, maximum: 1, defaultValue: 0.18, restartOnChange: true,
+            type: "float", minimum: 0, maximum: 1, defaultValue: 0, restartOnChange: true,
             description: "Probability that a cell starts alive."
         }
     ]
@@ -270,42 +694,103 @@ const cellularAutomatonSettingsB3S23 = completeSettings(cellularAutomatonSpecifi
     delay: 1,
     valueDimensions: 1,
     inputRadius: 3,
-    inputStrength: 1,
-    initialDensity: 0.18,
+    inputStrength: 10,
+    initialDensity: 0,
     noiseStrength: 0,
-    colorSensitivity: 3,
-    colorMixRatio: 0,
+    colorSensitivity: 50,
+    colorMixRatio: 0.02,
     ...cellularAutomatonSettings("B3S23")
+});
+
+const alternativeCellularAutomatonSpecification = cloneSpecification(cellularAutomatonSpecification);
+alternativeCellularAutomatonSpecification.title = "Alternative cellular automata";
+const alternativeRuleProperty = alternativeCellularAutomatonSpecification.vars.find(property =>
+    property.name === "useCellularAutomatonRule"
+);
+alternativeRuleProperty.defaultValue = "B3S134567";
+alternativeRuleProperty.description = "The B3S134567 Life-like rule: cells are born with 3 neighbours and survive with 1, 3, 4, 5, 6, or 7.";
+
+const alternativeCellularAutomatonSettings = completeSettings(alternativeCellularAutomatonSpecification, {
+    width: 800,
+    height: 800,
+    scaleT: 1,
+    scaleX: 1,
+    scaleY: 1,
+    speed: 1,
+    delay: 1,
+    valueDimensions: 1,
+    inputRadius: 7,
+    inputStrength: 10,
+    initialDensity: 0,
+    noiseStrength: 0,
+    colorSensitivity: 50,
+    colorMixRatio: 0.02,
+    ...cellularAutomatonSettings("B3S134567")
 });
 
 const simulationExamples = [
     {
         id: "sdnlw",
-        name: "SDNLW",
-        description: "Stochastic damped nonlinear wave.",
+        name: "Stochastic nonlinear wave",
+        description: "A strongly noise-driven, weakly damped nonlinear wave.",
         specification: sdnlwSpecification,
         settings: sdnlwSettings
     },
     {
         id: "linear-schrodinger",
-        name: "Linear Schrödinger wave packet",
-        description: "Linear wave packet.",
+        name: "Nonlinear Schrödinger wave packet",
+        description: "A wave packet with adjustable power p and focusing strength.",
         specification: schrodingerSpecification,
         settings: schrodingerSettings
     },
     {
         id: "navier-stokes-3",
-        name: "3-component Navier–Stokes vortex",
-        description: "Artificial-compressibility vortex.",
+        name: "Navier–Stokes vortex dipole",
+        description: "A stable counter-rotating vortex pair shown as two velocity components and vorticity.",
         specification: navierStokesSpecification,
         settings: navierStokesSettings
     },
     {
+        id: "ginzburg-landau",
+        name: "Stochastic complex Ginzburg–Landau",
+        description: "Noise-seeded complex amplitudes form moving spiral and defect patterns.",
+        specification: ginzburgLandauSpecification,
+        settings: ginzburgLandauSettings
+    },
+    {
+        id: "swift-hohenberg",
+        name: "Stochastic Swift–Hohenberg patterns",
+        description: "Strong random forcing drives fluctuating stripes from zero initial data.",
+        specification: swiftHohenbergSpecification,
+        settings: swiftHohenbergSettings
+    },
+    {
+        id: "heat-equation",
+        name: "Heat equation",
+        description: "Positive and negative temperature spots diffuse and smooth out.",
+        specification: heatSpecification,
+        settings: heatSettings
+    },
+    {
+        id: "lens-wave",
+        name: "Linear wave through a lens",
+        description: "Plane waves enter from the left and refract through a central material lens.",
+        specification: lensWaveSpecification,
+        settings: lensWaveSettings
+    },
+    {
         id: "cellular-automaton",
-        name: "Life-like cellular automaton",
-        description: "Life-like cellular automaton.",
+        name: "Conway's Game of Life",
+        description: "Conway's B3S23 cellular automaton.",
         specification: cellularAutomatonSpecification,
         settings: cellularAutomatonSettingsB3S23
+    },
+    {
+        id: "alternative-cellular-automaton",
+        name: "Alternative cellular automata",
+        description: "The B3S134567 Life-like rule with unusually persistent structures.",
+        specification: alternativeCellularAutomatonSpecification,
+        settings: alternativeCellularAutomatonSettings
     }
 ];
 

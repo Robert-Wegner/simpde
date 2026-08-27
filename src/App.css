@@ -14,3 +14,203 @@ input[type="number"] {
 textarea::-webkit-resizer {
   display: none;
 }
+
+:root {
+  --ui-background: rgb(20, 20, 20);
+  --ui-panel: rgba(20, 20, 20, 0.97);
+  --ui-text: rgb(240, 240, 240);
+  --ui-muted: rgb(175, 175, 175);
+  --ui-cyan: rgb(0, 220, 220);
+  --ui-yellow: rgb(220, 220, 0);
+  --ui-magenta: rgb(220, 0, 220);
+  --ui-red: rgb(235, 70, 70);
+  --ui-shadow: rgba(0, 0, 0, 0.5);
+}
+
+.app[data-theme="light"] {
+  --ui-background: rgb(242, 244, 246);
+  --ui-panel: rgba(250, 251, 252, 0.98);
+  --ui-text: rgb(28, 31, 35);
+  --ui-muted: rgb(91, 99, 108);
+  --ui-cyan: rgb(0, 125, 138);
+  --ui-yellow: rgb(142, 112, 0);
+  --ui-magenta: rgb(151, 40, 151);
+  --ui-red: rgb(190, 35, 42);
+  --ui-shadow: rgba(28, 31, 35, 0.22);
+}
+
+.app {
+  width: 100vw;
+  min-height: 100vh;
+  color: var(--ui-text);
+  background: var(--ui-background);
+}
+
+.simulation-viewport {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100vw;
+  min-height: 100vh;
+  background: var(--ui-background);
+}
+
+.simulation-canvas {
+  display: block;
+  width: calc(100vw - 24px);
+  height: auto;
+  margin: 12px;
+  box-shadow: 0 10px 32px var(--ui-shadow);
+}
+
+.control-drawer {
+  position: fixed;
+  z-index: 10;
+  top: 12px;
+  left: 12px;
+  width: min(37.5vw, 720px);
+  min-width: 360px;
+  pointer-events: none;
+}
+
+.control-drawer__bar,
+.control-drawer__panel {
+  pointer-events: auto;
+}
+
+.control-drawer__bar {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.control-drawer__toggle,
+.control-drawer__restart {
+  font-family: Consolas, Monaco, "Lucida Console", "Liberation Mono", monospace;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.control-drawer__toggle {
+  position: relative;
+  z-index: 2;
+  min-width: 148px;
+  padding: 8px 12px;
+  color: var(--ui-text);
+  background: var(--ui-panel);
+  border: 2px solid var(--ui-cyan);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 14px var(--ui-shadow);
+}
+
+.control-drawer__restart {
+  position: relative;
+  z-index: 2;
+  padding-inline: 14px;
+  background: var(--ui-panel);
+  box-shadow: 0 4px 14px var(--ui-shadow);
+}
+
+.control-drawer__toggle:hover,
+.control-drawer__toggle:focus-visible {
+  outline: none;
+  text-shadow: 0 0 3px var(--ui-cyan);
+  box-shadow: 0 0 7px var(--ui-cyan);
+}
+
+.control-drawer__chevron {
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 140ms ease;
+}
+
+.control-drawer--open .control-drawer__chevron {
+  transform: rotate(90deg);
+}
+
+.control-drawer__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 68px);
+  color: var(--ui-text);
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-muted);
+  box-shadow: 0 12px 32px var(--ui-shadow);
+  transform: translateY(-10px) scaleY(0.985);
+  transform-origin: top left;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 140ms ease, transform 140ms ease, visibility 0s linear 140ms;
+}
+
+.control-drawer--open .control-drawer__panel {
+  transform: translateY(0) scaleY(1);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.settings-box {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+}
+
+.settings-box__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 2px 8px;
+  font-family: Consolas, Monaco, "Lucida Console", monospace;
+}
+
+.settings-box__heading {
+  color: var(--ui-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-button {
+  padding: 5px 8px;
+  color: var(--ui-text);
+  background: var(--ui-background);
+  border: 1px solid var(--ui-yellow);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-button:hover,
+.ui-button:focus-visible {
+  outline: none;
+  text-shadow: 0 0 3px var(--ui-yellow);
+  box-shadow: 0 0 5px var(--ui-yellow);
+}
+
+.settings-separator {
+  height: 1px;
+  margin: 12px 8px;
+  background: linear-gradient(90deg, var(--ui-cyan), var(--ui-magenta), transparent);
+  opacity: 0.65;
+}
+
+@media (max-width: 760px) {
+  .control-drawer {
+    width: calc(100vw - 24px);
+    min-width: 0;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control-drawer__chevron,
+  .control-drawer__panel {
+    transition: none;
+  }
+}

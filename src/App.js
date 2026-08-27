@@ -1,25 +1,33 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {Sim} from './Sim.js';
-import {colors} from './colors.js';
+import {findSimulationExample} from './examples.js';
 import {cloneSpecification, defaultSpecification} from './spec.js'
 
 function App() {
-  
-    const [specification, setSpecification] = useState(() => cloneSpecification(defaultSpecification));
+    const [specification, setSpecification] = useState(() => cloneSpecification(
+        window.location.hash
+            ? defaultSpecification
+            : findSimulationExample("sdnlw")?.specification || defaultSpecification
+    ));
+    const [theme, setTheme] = useState(() => {
+        const savedTheme = window.localStorage?.getItem("simpde-theme");
+        return savedTheme === "light" ? "light" : "dark";
+    });
+
+    useEffect(() => {
+        window.localStorage?.setItem("simpde-theme", theme);
+    }, [theme]);
 
     return (
-        <div style = {{backgroundColor: colors.gray,
-                       color: colors.textWhite,
-                       width: "100vw",
-                       height: "100vh"}}>
-            {specification.title || "SimPDE!"}
+        <main className="app" data-theme={theme}>
             <Sim specification = {specification}
                 setSpecification = {setSpecification}
+                theme={theme}
+                setTheme={setTheme}
             />
-        </div>
-		
-  );
+        </main>
+    );
 }
 
 export default App;

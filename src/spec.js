@@ -29,7 +29,7 @@ function zeroInitialData(valueDimensions) {
 
 const defaultSpecification = {
     schemaVersion: 1,
-    title: "SimPDE!",
+    title: "",
     group: {
         name: "settings",
         displayName: "Settings",
@@ -64,14 +64,14 @@ const defaultSpecification = {
     vars: [
         {
             name: "width", displayName: "Width", group: "/settings/sim",
-            type: "int", minimum: 1, maximum: 3000, defaultValue: 400,
+            type: "int", minimum: 1, maximum: 3000, defaultValue: 1200,
             uniformName: "width", uniformType: "float", shaderPrograms: ["compute", "color", "vertex"],
             restartOnChange: true,
             description: "The width of the simulated texture in pixels."
         },
         {
             name: "height", displayName: "Height", group: "/settings/sim",
-            type: "int", minimum: 1, maximum: 3000, defaultValue: 400,
+            type: "int", minimum: 1, maximum: 3000, defaultValue: 800,
             uniformName: "height", uniformType: "float", shaderPrograms: ["compute", "color", "vertex"],
             restartOnChange: true,
             description: "The total height of the vertically stacked simulation fields in pixels."

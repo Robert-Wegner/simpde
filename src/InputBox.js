@@ -4,24 +4,14 @@ import {colors} from './colors.js'
 import {admitSetting, coerceSetting} from './spec.js';
 
 function InputBox(props) {
-
-    var updateParent = (props.parentUpdateDiv ? props.parentUpdateDiv : () => null);
-    var tripleUpdateParent = () => {
-        setTimeout(updateParent, waitTime * 0.1 * 1000);
-        setTimeout(updateParent, waitTime * 0.5 * 1000);
-        setTimeout(updateParent, waitTime * 1.1 * 1000);
-    }
     const [mode, setMode] = useState("value");
-    const waitTime = 0.1;
-    var toggleMode = (e) => {   e.preventDefault(); setMode(mode === "value" ? "description" : "value");
-                                tripleUpdateParent();
-    };
+    var toggleMode = (e) => { e.preventDefault(); setMode(mode === "value" ? "description" : "value"); };
     
 
     var spec = props.spec;
     var handleChange = props.handleChange;
     var handleBlur = props.handleBlur;
-    var stringValue = props.stringValue;
+    var stringValue = props.stringValue ?? "";
     var candidateValue = coerceSetting(spec, stringValue);
     var errorFlag = candidateValue === undefined || !admitSetting(spec, candidateValue);
 
@@ -71,13 +61,11 @@ function InputBox(props) {
 
     var shrinkSize = (e) => {
         e.target.style.maxHeight = "3.5em";
-        tripleUpdateParent();
     }
     var expandSize = (e) => {
         e.target.style.maxHeight = "";
         e.target.style.height = "";
         e.target.style.height = String(e.target.scrollHeight) + "px";
-        tripleUpdateParent();
     }
 
     if (mode === "value") {
@@ -122,7 +110,6 @@ function InputBox(props) {
         else if (spec.type === "string") {
             res = <textarea   onChange={(e) => {
                                                 handleChange(e); 
-                                                updateParent();
                                             }} 
                             onBlur={(e) => {handleFocusOut(e); handleBlur(e); shrinkSize(e)}}
                             onFocus={(e) => {handleFocus(e); expandSize(e);}}

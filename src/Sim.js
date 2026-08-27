@@ -1,6 +1,5 @@
 import React, {useEffect, useRef, useState} from "react";
 import {cellularAutomatonSettings} from "./cellularAutomaton";
-import {colors} from "./colors";
 import {findSimulationExample, simulationExamples} from "./examples";
 import {launch} from "./launch";
 import {SettingsBox} from "./SettingsBox";
@@ -65,13 +64,33 @@ function prepareSettingsInput(specification, input) {
     return fillDefaultSettings(specification)(normalized);
 }
 
-function Sim({specification, setSpecification}) {
+function standardDimensionsForViewport() {
+    const isMobile = typeof window.matchMedia === "function"
+        ? window.matchMedia("(max-width: 760px)").matches
+        : window.innerWidth <= 760;
+    return isMobile ? {width: 600, height: 1000} : {width: 1200, height: 800};
+}
+
+function prepareExampleSettings(example) {
+    return prepareSettingsInput(example.specification, {
+        ...example.settings,
+        ...standardDimensionsForViewport()
+    });
+}
+
+function Sim({specification, setSpecification, theme, setTheme}) {
     const initialSettings = useRef(null);
-    if (initialSettings.current === null) initialSettings.current = settingsFromWindowHash(specification);
+    if (initialSettings.current === null) {
+        const defaultExample = findSimulationExample("sdnlw");
+        initialSettings.current = window.location.hash
+            ? settingsFromWindowHash(specification)
+            : prepareExampleSettings(defaultExample);
+    }
     const [settings, setSettings] = useState(initialSettings.current);
     const [runtimeSettings, setRuntimeSettings] = useState(initialSettings.current);
     const [runtimeError, setRuntimeError] = useState("");
     const [selectedExampleId, setSelectedExampleId] = useState(() => window.location.hash ? "" : "sdnlw");
+    const [controlsOpen, setControlsOpen] = useState(false);
     const canvasRef = useRef(null);
     const runtimeRef = useRef(null);
 
@@ -89,6 +108,23 @@ function Sim({specification, setSpecification}) {
             runtimeRef.current = null;
         };
     }, [runtimeSettings, specification]);
+
+    useEffect(() => {
+        if (typeof window.matchMedia !== "function") return undefined;
+        const mediaQuery = window.matchMedia("(max-width: 760px)");
+        const updateBuiltInDimensions = () => {
+            if (!selectedExampleId) return;
+            const dimensions = standardDimensionsForViewport();
+            setSettings(current => {
+                if (current.width === dimensions.width && current.height === dimensions.height) return current;
+                const nextSettings = {...current, ...dimensions};
+                setRuntimeSettings(nextSettings);
+                return nextSettings;
+            });
+        };
+        mediaQuery.addEventListener?.("change", updateBuiltInDimensions);
+        return () => mediaQuery.removeEventListener?.("change", updateBuiltInDimensions);
+    }, [selectedExampleId]);
 
     function commitSettings(nextSettings, restart) {
         setSettings(nextSettings);
@@ -168,7 +204,7 @@ function Sim({specification, setSpecification}) {
             const nextSpecification = cloneSpecification(example.specification);
             const errors = validateSpecification(nextSpecification);
             if (errors.length > 0) throw new Error(errors.join("\n"));
-            const nextSettings = prepareSettingsInput(nextSpecification, example.settings);
+            const nextSettings = prepareExampleSettings(example);
             setSpecification(nextSpecification);
             setRuntimeError("");
             setSelectedExampleId(id);
@@ -179,39 +215,58 @@ function Sim({specification, setSpecification}) {
         }
     }
 
-    return <div id="Sim" style={{
-        backgroundColor: colors.gray,
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "flex-start",
-        justifyContent: "space-evenly"
-    }}>
+    return <div id="Sim" className="simulation-viewport">
         <canvas
             id="canvas"
+            className="simulation-canvas"
             aria-label="Simulation canvas"
-            style={{touchAction: "none", width: "70vw"}}
+            style={{touchAction: "none"}}
             width={settings.width}
             height={settings.height}
             ref={canvasRef}
         />
-        <SettingsBox
-            specification={specification}
-            settings={settings}
-            handleSettingChange={handleSettingChange}
-            handleReset={() => setRuntimeSettings({...settings})}
-            onApplySettings={applySettings}
-            onApplySpecification={applySpecification}
-            examples={simulationExamples}
-            selectedExampleId={selectedExampleId}
-            onSelectExample={applyExample}
-            runtimeError={runtimeError}
-        />
+        <aside className={`control-drawer${controlsOpen ? " control-drawer--open" : ""}`}>
+            <div className="control-drawer__bar">
+                <button
+                    type="button"
+                    className="control-drawer__toggle"
+                    aria-expanded={controlsOpen}
+                    aria-controls="control-panel"
+                    onClick={() => setControlsOpen(current => !current)}
+                >
+                    <span className="control-drawer__chevron">▷</span>
+                    Controls
+                </button>
+                <button
+                    type="button"
+                    className="ui-button control-drawer__restart"
+                    onClick={() => setRuntimeSettings({...settings})}
+                >Restart</button>
+            </div>
+            <div id="control-panel" className="control-drawer__panel" aria-hidden={!controlsOpen}>
+                <SettingsBox
+                    specification={specification}
+                    settings={settings}
+                    handleSettingChange={handleSettingChange}
+                    onApplySettings={applySettings}
+                    onApplySpecification={applySpecification}
+                    examples={simulationExamples}
+                    selectedExampleId={selectedExampleId}
+                    onSelectExample={applyExample}
+                    runtimeError={runtimeError}
+                    theme={theme}
+                    onToggleTheme={() => setTheme(current => current === "dark" ? "light" : "dark")}
+                />
+            </div>
+        </aside>
     </div>;
 }
 
 export {
     Sim,
     prepareSettingsInput,
+    prepareExampleSettings,
     resizeFieldSettings,
+    standardDimensionsForViewport,
     settingsFromWindowHash
 };

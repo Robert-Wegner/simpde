@@ -37,14 +37,51 @@ describe("built-in simulation examples", () => {
         const byId = Object.fromEntries(simulationExamples.map(example => [example.id, example]));
         expect(byId.sdnlw.settings.integrationMethod).toBe("semiImplicitEuler");
         expect(byId.sdnlw.settings.timeOrder).toBe(2);
+        expect(byId.sdnlw.settings).toMatchObject({
+            width: 1200,
+            height: 800,
+            laplace: 5,
+            identity: 0.2,
+            derivative: 0.01,
+            noiseStrength: 1.2,
+            boundaryCondition: 1
+        });
 
         expect(byId["linear-schrodinger"].settings.valueDimensions).toBe(2);
         expect(byId["linear-schrodinger"].settings.integrationMethod).toBe("rk4");
         expect(byId["linear-schrodinger"].settings.timeOrder).toBe(1);
+        expect(byId["linear-schrodinger"].settings.nonlinearPower).toBe(3);
+        expect(byId["linear-schrodinger"].settings.equation).toContain("nonlinearPower");
 
         expect(byId["navier-stokes-3"].settings.valueDimensions).toBe(3);
         expect(byId["navier-stokes-3"].settings.integrationMethod).toBe("rk4");
         expect(byId["navier-stokes-3"].settings.equation).toContain("u_1_x + u_2_y");
+        expect(byId["navier-stokes-3"].settings.initialDataFunction).toContain("vortexSeparation");
+
+        const ginzburgLandau = byId["ginzburg-landau"];
+        expect(ginzburgLandau.settings.initialDataFunction).toContain("[[0.0, 0.0], [0.0, 0.0]]");
+        expect(ginzburgLandau.settings.noiseStrength).toBeGreaterThan(0);
+        expect(ginzburgLandau.settings.equation).toContain("nonlinearDispersion");
+
+        const swiftHohenberg = byId["swift-hohenberg"];
+        expect(swiftHohenberg.settings.initialDataFunction).toContain("[[0.0, 0.0]]");
+        expect(swiftHohenberg.settings.noiseStrength).toBeGreaterThan(0);
+        expect(swiftHohenberg.settings.noiseStrength).toBe(10);
+        expect(swiftHohenberg.settings.equation).toContain("u_1_xxxx");
+
+        expect(byId["heat-equation"].settings.equation).toContain("thermalDiffusivity");
+
+        const lensWave = byId["lens-wave"];
+        expect(lensWave.settings.timeOrder).toBe(2);
+        expect(lensWave.settings.equation).toContain("lensCenterX");
+        expect(lensWave.settings.equation).toContain("sourceX");
+        expect(lensWave.settings).toMatchObject({
+            width: 1200,
+            height: 800,
+            sourceX: -90,
+            lensCenterX: 0.19,
+            lensSize: 2
+        });
 
         const automaton = byId["cellular-automaton"];
         expect(automaton.settings).toMatchObject(cellularAutomatonSettings("B3S23"));
@@ -52,5 +89,8 @@ describe("built-in simulation examples", () => {
             property.name === "useCellularAutomatonRule").hidden).toBe(false);
         expect(byId.sdnlw.specification.vars.find(property =>
             property.name === "useCellularAutomatonRule").hidden).toBe(true);
+
+        const alternativeAutomaton = byId["alternative-cellular-automaton"];
+        expect(alternativeAutomaton.settings).toMatchObject(cellularAutomatonSettings("B3S134567"));
     });
 });
