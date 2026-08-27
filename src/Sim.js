@@ -26,6 +26,17 @@ function settingsFromWindowHash(specification) {
     }
 }
 
+function exampleIdFromWindowHash() {
+    if (!window.location.hash) return "";
+    try {
+        const parsed = JSON.parse(decodeURIComponent(window.location.hash.slice(1)));
+        return typeof parsed.example === "string" ? parsed.example : "";
+    }
+    catch (error) {
+        return "";
+    }
+}
+
 function resizeFieldSettings(settings, valueDimensions) {
     const oldDimensions = settings.valueDimensions;
     const patch = {valueDimensions};
@@ -91,7 +102,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
     const [settings, setSettings] = useState(initialSettings.current);
     const [runtimeSettings, setRuntimeSettings] = useState(initialSettings.current);
     const [runtimeError, setRuntimeError] = useState("");
-    const [selectedExampleId, setSelectedExampleId] = useState(() => window.location.hash ? "" : "sdnlw");
+    const [selectedExampleId, setSelectedExampleId] = useState(() => exampleIdFromWindowHash() || (window.location.hash ? "" : "sdnlw"));
     const [controlsOpen, setControlsOpen] = useState(false);
     const canvasRef = useRef(null);
     const runtimeRef = useRef(null);
@@ -211,6 +222,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
             setRuntimeError("");
             setSelectedExampleId(id);
             commitSettings(nextSettings, true);
+            window.history.replaceState(null, "", `#${encodeURIComponent(JSON.stringify({example: id, settings: nextSettings}))}`);
         }
         catch (error) {
             setRuntimeError(error instanceof Error ? error.message : String(error));
