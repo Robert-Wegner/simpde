@@ -28,6 +28,7 @@
     "dev": "vinext dev",
     "start": "vinext dev",
     "build": "vinext build",
+    "build:pages": "vite build --config vite.github-pages.config.mjs",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
