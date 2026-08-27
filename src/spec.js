@@ -119,7 +119,7 @@ const defaultSpecification = {
         },
         {
             name: "delay", displayName: "Minimum frame interval", group: "/settings/sim",
-            type: "int", minimum: 0, defaultValue: 10,
+            type: "int", minimum: 0, defaultValue: 8,
             restartOnChange: true,
             description: "The timer interval between displayed frames, in milliseconds."
         },
