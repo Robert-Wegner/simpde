@@ -4,10 +4,21 @@ import {Sim} from './Sim.js';
 import {findSimulationExample} from './examples.js';
 import {cloneSpecification, defaultSpecification} from './spec.js'
 
+function exampleIdFromWindowHash() {
+    if (typeof window === "undefined" || !window.location.hash) return "";
+    try {
+        const parsed = JSON.parse(decodeURIComponent(window.location.hash.slice(1)));
+        return typeof parsed.example === "string" ? parsed.example : "";
+    }
+    catch (error) {
+        return "";
+    }
+}
+
 function App() {
     const [specification, setSpecification] = useState(() => cloneSpecification(
-        window.location.hash
-            ? defaultSpecification
+        typeof window !== "undefined" && window.location.hash
+            ? findSimulationExample(exampleIdFromWindowHash())?.specification || defaultSpecification
             : findSimulationExample("sdnlw")?.specification || defaultSpecification
     ));
     const [theme, setTheme] = useState(() => {
