@@ -68,7 +68,9 @@ function standardDimensionsForViewport() {
     const isMobile = typeof window.matchMedia === "function"
         ? window.matchMedia("(max-width: 760px)").matches
         : window.innerWidth <= 760;
-    return isMobile ? {width: 600, height: 1000} : {width: 1200, height: 800};
+    // Keep roughly half the pixel workload of the original defaults while
+    // preserving the desktop (3:2) and mobile (3:5) viewport proportions.
+    return isMobile ? {width: 424, height: 707} : {width: 850, height: 567};
 }
 
 function prepareExampleSettings(example) {
