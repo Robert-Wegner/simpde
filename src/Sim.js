@@ -81,7 +81,7 @@ function standardDimensionsForViewport() {
         : window.innerWidth <= 760;
     // Keep roughly half the pixel workload of the original defaults while
     // preserving the desktop (3:2) and mobile (3:5) viewport proportions.
-    return isMobile ? {width: 424, height: 707} : {width: 850, height: 567};
+    return isMobile ? {width: 520, height: 867} : {width: 1050, height: 700};
 }
 
 function prepareExampleSettings(example) {

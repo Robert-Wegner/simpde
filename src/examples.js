@@ -45,8 +45,9 @@ function composeExampleSpecification(title, creativeOptions) {
 function completeSettings(specification, settings) {
     return fillDefaultSettings(specification)({
         ...settings,
-        width: 850,
-        height: 567
+        width: 1050,
+        height: 700,
+        delay: 16
     });
 }
 
