@@ -46,7 +46,7 @@ function completeSettings(specification, settings) {
     return fillDefaultSettings(specification)({
         ...settings,
         width: 1050,
-        height: 700,
+        height: 702,
         delay: 8,
         speed: 1
     });
@@ -287,7 +287,7 @@ const navierStokesSettings = completeSettings(navierStokesSpecification, {
 const ginzburgLandauSpecification = composeExampleSpecification("Stochastic complex Ginzburg–Landau", {
     overrides: {
         inputRadius: {defaultValue: 16},
-        inputStrength: {defaultValue: 2},
+        inputStrength: {defaultValue: 20},
         initialDataFunction: {
             defaultValue: "(x, y) => [[0.0, 0.0], [0.0, 0.0]]",
             description: "Zero initial data for both components. Persistent random forcing seeds the evolving pattern."
@@ -367,7 +367,7 @@ const ginzburgLandauSettings = completeSettings(ginzburgLandauSpecification, {
     colorPattern: 0,
     displayedQuantity: "[`1i u_2`, `u_1 * u_1 + u_2 * u_2`]",
     inputRadius: 16,
-    inputStrength: 2,
+    inputStrength: 20,
     initialDataFunction: "(x, y) => [[0.0, 0.0], [0.0, 0.0]]",
     laplace: 1,
     identity: 1,
@@ -387,7 +387,7 @@ const ginzburgLandauSettings = completeSettings(ginzburgLandauSpecification, {
 const swiftHohenbergSpecification = composeExampleSpecification("Stochastic Swift–Hohenberg patterns", {
     overrides: {
         inputRadius: {defaultValue: 32},
-        inputStrength: {defaultValue: 0.4},
+        inputStrength: {defaultValue: 4},
         initialDataFunction: {
             defaultValue: "(x, y) => [[0.0, 0.0]]",
             description: "Zero initial data. Random forcing continuously nucleates and moves the stripes."
@@ -445,7 +445,7 @@ const swiftHohenbergSettings = completeSettings(swiftHohenbergSpecification, {
     integrationMethod: "rk4",
     boundaryCondition: 0,
     inputRadius: 32,
-    inputStrength: 0.4,
+    inputStrength: 4,
     initialDataFunction: "(x, y) => [[0.0, 0.0]]",
     laplace: 1,
     identity: 1,
@@ -521,7 +521,7 @@ const heatSettings = completeSettings(heatSpecification, {
 const lensWaveSpecification = composeExampleSpecification("Linear wave through a lens", {
     overrides: {
         inputRadius: {defaultValue: 10},
-        inputStrength: {defaultValue: 9},
+        inputStrength: {defaultValue: 90},
         initialDataFunction: {
             defaultValue: "(x, y) => [[0.0, 0.0]]",
             description: "Zero displacement and velocity; a built-in source sends plane waves in from the left."
@@ -644,7 +644,7 @@ const lensWaveSettings = completeSettings(lensWaveSpecification, {
     timeOrder: 2,
     integrationMethod: "semiImplicitEuler",
     inputRadius: 10,
-    inputStrength: 9,
+    inputStrength: 90,
     initialDataFunction: "(x, y) => [[0.0, 0.0]]",
     laplace: 1,
     identity: 1,

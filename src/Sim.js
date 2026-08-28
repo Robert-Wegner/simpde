@@ -26,14 +26,37 @@ function settingsFromWindowHash(specification) {
     }
 }
 
-function exampleIdFromWindowHash() {
+function exampleIdFromWindowLocation() {
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const pathCandidate = decodeURIComponent(pathParts.at(-1) || "");
+    if (findSimulationExample(pathCandidate)) return pathCandidate;
     if (!window.location.hash) return "";
     try {
         const parsed = JSON.parse(decodeURIComponent(window.location.hash.slice(1)));
-        return typeof parsed.example === "string" ? parsed.example : "";
+        return typeof parsed.example === "string" && findSimulationExample(parsed.example)
+            ? parsed.example
+            : "";
     }
     catch (error) {
         return "";
+    }
+}
+
+function siteBasePath() {
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const projectIndex = pathParts.indexOf("simpde");
+    return projectIndex >= 0 ? `/${pathParts.slice(0, projectIndex + 1).join("/")}/` : "/";
+}
+
+function setExamplePath(id) {
+    window.history.replaceState(null, "", `${siteBasePath()}${encodeURIComponent(id)}/`);
+}
+
+function clearExamplePath() {
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const pathCandidate = decodeURIComponent(pathParts.at(-1) || "");
+    if (findSimulationExample(pathCandidate)) {
+        window.history.replaceState(null, "", siteBasePath());
     }
 }
 
@@ -79,9 +102,9 @@ function standardDimensionsForViewport() {
     const isMobile = typeof window.matchMedia === "function"
         ? window.matchMedia("(max-width: 760px)").matches
         : window.innerWidth <= 760;
-    // Keep roughly half the pixel workload of the original defaults while
-    // preserving the desktop (3:2) and mobile (3:5) viewport proportions.
-    return isMobile ? {width: 520, height: 867} : {width: 1050, height: 700};
+    // Keep practical desktop and mobile proportions. Heights are divisible by
+    // both 2 and 3 so vertically stacked component fields divide evenly.
+    return isMobile ? {width: 520, height: 864} : {width: 1050, height: 702};
 }
 
 function prepareExampleSettings(example) {
@@ -94,7 +117,8 @@ function prepareExampleSettings(example) {
 function Sim({specification, setSpecification, theme, setTheme}) {
     const initialSettings = useRef(null);
     if (initialSettings.current === null) {
-        const defaultExample = findSimulationExample("sdnlw");
+        const linkedExampleId = exampleIdFromWindowLocation();
+        const defaultExample = findSimulationExample(linkedExampleId || "sdnlw");
         initialSettings.current = window.location.hash
             ? settingsFromWindowHash(specification)
             : prepareExampleSettings(defaultExample);
@@ -102,7 +126,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
     const [settings, setSettings] = useState(initialSettings.current);
     const [runtimeSettings, setRuntimeSettings] = useState(initialSettings.current);
     const [runtimeError, setRuntimeError] = useState("");
-    const [selectedExampleId, setSelectedExampleId] = useState(() => exampleIdFromWindowHash() || (window.location.hash ? "" : "sdnlw"));
+    const [selectedExampleId, setSelectedExampleId] = useState(() => exampleIdFromWindowLocation() || (window.location.hash ? "" : "sdnlw"));
     const [controlsOpen, setControlsOpen] = useState(false);
     const canvasRef = useRef(null);
     const runtimeRef = useRef(null);
@@ -177,6 +201,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
         );
         setRuntimeError("");
         setSelectedExampleId("");
+        clearExamplePath();
         commitSettings(nextSettings, restart);
         if (!restart) {
             for (const [changedName, changedValue] of Object.entries(patch)) {
@@ -189,6 +214,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
         const nextSettings = prepareSettingsInput(specification, input);
         setRuntimeError("");
         setSelectedExampleId("");
+        clearExamplePath();
         commitSettings(nextSettings, true);
     }
 
@@ -200,6 +226,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
         setSpecification(nextSpecification);
         setRuntimeError("");
         setSelectedExampleId("");
+        clearExamplePath();
         commitSettings(nextSettings, true);
     }
 
@@ -222,7 +249,7 @@ function Sim({specification, setSpecification, theme, setTheme}) {
             setRuntimeError("");
             setSelectedExampleId(id);
             commitSettings(nextSettings, true);
-            window.history.replaceState(null, "", `#${encodeURIComponent(JSON.stringify({example: id, settings: nextSettings}))}`);
+            setExamplePath(id);
         }
         catch (error) {
             setRuntimeError(error instanceof Error ? error.message : String(error));
