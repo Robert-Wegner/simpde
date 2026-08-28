@@ -144,6 +144,7 @@ function launch(canvas, specification, settings) {
     }
 
     function updateNoiseSeed() {
+        if (appliedSettings.noiseStrength === 0) return;
         const seed = Math.random();
         for (const programName of equationProgramNames) {
             gl.useProgram(programs[programName]);

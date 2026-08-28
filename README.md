@@ -85,39 +85,6 @@ u_t = u_t + scaleT * u_tt
 u   = u   + scaleT * u_t
 ```
 
-### Shallow capillary–gravity waves and Poisson rain
-
-The **Shallow capillary–gravity rain** example evolves the small surface elevation
-`u_1 = η` in SI units:
-
-```text
-η_tt = g h Δη - (σ/ρ) h Δ²η - γ η_t + rain + pointer forcing.
-```
-
-For a Fourier mode with wave-number magnitude `k`, this gives
-`ω² = g h k² + (σ/ρ) h k⁴`. It is the leading shallow-water (`kh << 1`)
-form of the exact finite-depth relation
-`ω² = (gk + (σ/ρ)k³) tanh(kh)`. The exact operator is nonlocal in physical
-space because it is a non-polynomial Fourier multiplier. The shallow expansion
-used here is polynomial in `k²`, so it becomes the local Laplacian plus
-biharmonic operator above and fits the finite-difference shader.
-
-The Laplacian uses centered second differences. The biharmonic term is
-`u_1_xxxx + 2 u_1_xxyy + u_1_yyyy`, assembled from centered finite-difference
-stencils. A second-order semi-implicit Euler step updates velocity before
-elevation. Its small default time step is chosen to resolve the stiff `k⁴`
-capillary term.
-
-Rain uses rejection thinning for an inhomogeneous space-time Poisson process.
-Each time step is split into four sub-bins. In each sub-bin the shader draws a
-whole-domain candidate from the homogeneous upper rate `λ_max`, using event
-probability `1 - exp(-λ_max area scaleT / 4)`, gives it a uniformly random
-position, and accepts it with probability `λ(x,y,t) / λ_max`. Using whole-domain
-candidates avoids comparing the 32-bit shader random number with extremely tiny
-per-pixel probabilities. The four-bin approximation converges to the target
-Poisson process as the time step is reduced. Each accepted event applies a
-downward velocity impulse with an optional random drop-size mark.
-
 For a first-order system such as a real/imaginary Schrödinger pair, select time order 1 and RK4, then assign `u_1_t`, `u_2_t`, and so on in the equation sections. RK4 uses additional floating-point work textures and approximately four equation evaluations per simulation step.
 
 Spatial derivatives are generated from names such as `u_1_x`, `u_1_xx`, `u_1_xy`, `u_1_xxx`, and `u_1_t_xy`. The eight immediate neighbours are also available as `u_1_right`, `u_1_left`, `u_1_above`, `u_1_below`, and their diagonal combinations.

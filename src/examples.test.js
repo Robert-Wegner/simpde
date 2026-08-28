@@ -38,8 +38,8 @@ describe("built-in simulation examples", () => {
         expect(byId.sdnlw.settings.integrationMethod).toBe("semiImplicitEuler");
         expect(byId.sdnlw.settings.timeOrder).toBe(2);
         expect(byId.sdnlw.settings).toMatchObject({
-            width: 1050,
-            height: 700,
+            width: 1200,
+            height: 800,
             laplace: 5,
             identity: 0.2,
             derivative: 0.01,
@@ -71,27 +71,13 @@ describe("built-in simulation examples", () => {
 
         expect(byId["heat-equation"].settings.equation).toContain("thermalDiffusivity");
 
-        const capillaryGravity = byId["capillary-gravity-rain"];
-        expect(capillaryGravity.settings).toMatchObject({
-            timeOrder: 2,
-            integrationMethod: "semiImplicitEuler",
-            waterDepth: 0.001,
-            surfaceTensionOverDensity: 0.000072,
-            rainBaseRate: 150,
-            boundaryCondition: 0
-        });
-        expect(capillaryGravity.settings.equation).toContain("u_1_xxxx + 2.0 * u_1_xxyy + u_1_yyyy");
-        expect(capillaryGravity.settings.equation).toContain("rainCandidateProbability");
-        expect(capillaryGravity.settings.equation).toContain("rainLambda / max(rainLambdaMax");
-        expect(capillaryGravity.settings.equation).toContain("rainImpulse * rainKick / max(scaleT");
-
         const lensWave = byId["lens-wave"];
         expect(lensWave.settings.timeOrder).toBe(2);
         expect(lensWave.settings.equation).toContain("lensCenterX");
         expect(lensWave.settings.equation).toContain("sourceX");
         expect(lensWave.settings).toMatchObject({
-            width: 1050,
-            height: 700,
+            width: 1200,
+            height: 800,
             sourceX: -90,
             lensCenterX: 0.19,
             lensSize: 2
