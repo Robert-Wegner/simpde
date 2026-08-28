@@ -97,7 +97,7 @@ const sdnlwSettings = completeSettings(sdnlwSpecification, {
 const schrodingerSpecification = composeExampleSpecification("Nonlinear Schrödinger wave packet", {
     overrides: {
         inputRadius: {hidden: false, defaultValue: 15},
-        inputStrength: {hidden: false, defaultValue: 10},
+        inputStrength: {hidden: false, defaultValue: 50},
         initialDataFunction: {
             defaultValue: "(x, y) => { const dx = x - packetCenterX; const dy = y - packetCenterY; const amplitude = Math.exp(-(dx * dx + dy * dy) / (2.0 * packetSigma * packetSigma)); const phase = waveNumberX * x + waveNumberY * y; return [[amplitude * Math.cos(phase), 0.0], [amplitude * Math.sin(phase), 0.0]]; }",
             description: "JavaScript initial data for the real and imaginary parts of the wavefunction. The packet settings below are available by name."
@@ -183,7 +183,7 @@ const schrodingerSettings = completeSettings(schrodingerSpecification, {
     valueDimensions: 2,
     timeOrder: 1,
     integrationMethod: "rk4",
-    inputStrength: 10,
+    inputStrength: 50,
     packetSigma: 3,
     packetCenterX: -25,
     packetCenterY: 0,
