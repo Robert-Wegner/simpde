@@ -765,13 +765,6 @@ const simulationExamples = [
         settings: schrodingerSettings
     },
     {
-        id: "navier-stokes-3",
-        name: "Navier–Stokes vortex dipole",
-        description: "A stable counter-rotating vortex pair shown as two velocity components and vorticity.",
-        specification: navierStokesSpecification,
-        settings: navierStokesSettings
-    },
-    {
         id: "ginzburg-landau",
         name: "Stochastic complex Ginzburg–Landau",
         description: "Noise-seeded complex amplitudes form moving spiral and defect patterns.",
