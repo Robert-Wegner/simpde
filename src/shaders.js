@@ -11,8 +11,8 @@ function uniformDeclarations(properties, program) {
 
 function readTexture(valueDimensions, field, offsetX, offsetY, channel) {
     const verticalShift = valueDimensions - field;
-    return `texture(image, vec2(0.0, ${glslFloat(verticalShift)} * h) + ` +
-        `modulo(texCoordLocal + pixelSize * vec2(${glslFloat(offsetX)}, ${glslFloat(offsetY)}), vec2(1.0, h))).${channel}`;
+    return `sampleState(texCoordLocal + pixelSize * vec2(${glslFloat(offsetX)}, ${glslFloat(offsetY)}), ` +
+        `${glslFloat(verticalShift)} * h, h, pixelSize).${channel}`;
 }
 
 function parseDisplayedQuantities(source, valueDimensions) {
@@ -119,6 +119,20 @@ vec2 modulo(vec2 value, vec2 period) {
     return value - floor(value / period) * period;
 }
 
+vec4 sampleState(vec2 localPosition, float verticalShift, float fieldHeight, vec2 texelSize) {
+    if (boundaryCondition == 1
+        && (localPosition.x < texelSize.x
+            || localPosition.y < texelSize.y
+            || localPosition.x > 1.0 - texelSize.x
+            || localPosition.y > fieldHeight - texelSize.y)) {
+        return vec4(0.0);
+    }
+    return texture(
+        image,
+        vec2(0.0, verticalShift) + modulo(localPosition, vec2(1.0, fieldHeight))
+    );
+}
+
 void main() {
     vec4 previous = texture(image, v_texCoord);
     float h = ${glslFloat(1 / settings.valueDimensions)};
@@ -164,10 +178,10 @@ void main() {
 
     bool insideBoundary = boundaryCondition == 0
         || (boundaryCondition == 1
-            && texCoordLocal.x > 0.5 * pixelSize.x
-            && texCoordLocal.y > 0.5 * pixelSize.y
-            && texCoordLocal.x < 1.0 - 0.5 * pixelSize.x
-            && texCoordLocal.y < h - 0.5 * pixelSize.y)
+            && texCoordLocal.x >= pixelSize.x
+            && texCoordLocal.y >= pixelSize.y
+            && texCoordLocal.x <= 1.0 - pixelSize.x
+            && texCoordLocal.y <= h - pixelSize.y)
         || (boundaryCondition == 2
             && distance(texCoordLocal, vec2(0.5, 0.5 * h)) < 0.5 * h - min(pixelSize.x, pixelSize.y))
         || (boundaryCondition == 3
