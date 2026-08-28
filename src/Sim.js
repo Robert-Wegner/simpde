@@ -104,7 +104,7 @@ function standardDimensionsForViewport() {
         : window.innerWidth <= 760;
     // Keep practical desktop and mobile proportions. Heights are divisible by
     // both 2 and 3 so vertically stacked component fields divide evenly.
-    return isMobile ? {width: 520, height: 864} : {width: 1050, height: 702};
+    return isMobile ? {width: 520, height: 864} : {width: 1050, height: 696};
 }
 
 function prepareExampleSettings(example) {

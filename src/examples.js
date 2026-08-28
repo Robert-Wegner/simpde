@@ -46,7 +46,7 @@ function completeSettings(specification, settings) {
     return fillDefaultSettings(specification)({
         ...settings,
         width: 1050,
-        height: 702,
+        height: 696,
         delay: 8,
         speed: 1
     });
