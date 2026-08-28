@@ -237,7 +237,7 @@ const navierStokesSpecification = composeExampleSpecification("Navier–Stokes v
         },
         {
             name: "viscosity", displayName: "Kinematic viscosity", group: "/settings/model/basic",
-            type: "float", minimum: 0, defaultValue: 0.035,
+            type: "float", minimum: 0, defaultValue: 0.05,
             uniformName: "viscosity", uniformType: "float", shaderPrograms: ["compute"],
             restartOnChange: false,
             description: "Diffusion coefficient for both velocity components."
@@ -664,7 +664,7 @@ const lensWaveSettings = completeSettings(lensWaveSpecification, {
     sourceX: -90,
     sourceWidth: 1.2,
     baseWaveSpeed: 5.79,
-    waveDamping: 0.035,
+    waveDamping: 0.05,
     lensStrength: 2.8,
     lensCenterX: 0.19,
     lensCenterY: 0,
